@@ -8,39 +8,70 @@ API_KEY = os.environ.get('API_KEY')
 
 app = Flask(__name__)
 
+METALS = {
+    'get_gold':   {'symbol': 'XAU/USD', 'short': 'XAU', 'emoji': '🥇', 'name': 'XAU/USD'},
+    'get_silver': {'symbol': 'XAG/USD', 'short': 'XAG', 'emoji': '🥈', 'name': 'XAG/USD'},
+}
+
+def fetch_price(symbol, short):
+    err = None
+
+    # منبع ۱: TwelveData (طلا روی پلن رایگان OK هست)
+    try:
+        url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
+        data = requests.get(url, timeout=10).json()
+        if "price" in data:
+            return float(data["price"]), None
+        err = data.get("message", "price not found")
+    except Exception as e:
+        err = str(e)
+
+    # منبع ۲ (زاپاس رایگان): gold-api.com
+    try:
+        data = requests.get(f"https://api.gold-api.com/price/{short}", timeout=10).json()
+        if "price" in data:
+            return float(data["price"]), None
+    except Exception:
+        pass
+
+    # منبع ۳ (زاپاس رایگان): goldprice.org
+    try:
+        data = requests.get(
+            "https://data-asg.goldprice.org/dbXRates/USD",
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0"}
+        ).json()
+        item = data["items"][0]
+        price = item.get("xauPrice") if short == "XAU" else item.get("xagPrice")
+        if price:
+            return float(price), None
+    except Exception:
+        pass
+
+    return None, err
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     update = request.get_json()
 
-    # اگه دکمه زده شد
     if 'callback_query' in update:
         query = update['callback_query']
         chat_id = query['message']['chat']['id']
         message_id = query['message']['message_id']
-        data_clicked = query['data']  # get_gold یا get_silver
+        key = query['data']
 
-        # انتخاب نماد بر اساس دکمه‌ای که زده شده
-        if data_clicked == 'get_gold':
-            symbol = 'XAU/USD'
-            emoji = '🥇'
-            name = 'XAU/USD'
-        elif data_clicked == 'get_silver':
-            symbol = 'XAG/USD'
-            emoji = '🥈'
-            name = 'XAG/USD'
-        else:
+        if key not in METALS:
             return 'ok'
 
-        url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
-        try:
-            data = requests.get(url).json()
-            price = float(data["price"])
+        m = METALS[key]
+        price, err = fetch_price(m['symbol'], m['short'])
+
+        if price is not None:
             formatted = f"{price:,.2f}"
             now = datetime.datetime.now().strftime("%H:%M:%S")
-
-            text = f"{emoji} {name}\n💵 {formatted} USD\n🕐 {now}"
-        except:
-            text = "❌ خطا در دریافت قیمت"
+            text = f"{m['emoji']} {m['name']}\n💵 {formatted} USD\n🕐 {now}"
+        else:
+            text = f"❌ خطا در دریافت قیمت\n📛 دلیل: {err}"
 
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
             "chat_id": chat_id,
@@ -48,7 +79,6 @@ def webhook():
             "text": text
         })
 
-    # اگه /start فرستاده شد
     elif 'message' in update:
         chat_id = update['message']['chat']['id']
         keyboard = {
