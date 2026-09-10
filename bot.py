@@ -8,6 +8,9 @@ API_KEY = os.environ.get('API_KEY')
 
 app = Flask(__name__)
 
+# ⬇️ آیدی کانال/پیج تو (هر وقت خواستی عوضش کنی فقط همین جا رو تغییر بده)
+CHANNEL = '@AlphaTreadrs'
+
 METALS = {
     'get_gold':   {'symbol': 'XAU/USD', 'short': 'XAU', 'emoji': '🥇', 'name': 'XAU/USD'},
     'get_silver': {'symbol': 'XAG/USD', 'short': 'XAG', 'emoji': '🥈', 'name': 'XAG/USD'},
@@ -16,7 +19,7 @@ METALS = {
 def fetch_price(symbol, short):
     err = None
 
-    # منبع ۱: TwelveData (طلا روی پلن رایگان OK هست)
+    # منبع ۱: TwelveData
     try:
         url = f"https://api.twelvedata.com/price?symbol={symbol}&apikey={API_KEY}"
         data = requests.get(url, timeout=10).json()
@@ -69,9 +72,14 @@ def webhook():
         if price is not None:
             formatted = f"{price:,.2f}"
             now = datetime.datetime.now().strftime("%H:%M:%S")
-            text = f"{m['emoji']} {m['name']}\n💵 {formatted} USD\n🕐 {now}"
+            text = (
+                f"{m['emoji']} {m['name']}\n"
+                f"💵 {formatted} USD\n"
+                f"🕐 {now}\n\n"
+                f"📢 {CHANNEL}"
+            )
         else:
-            text = f"❌ خطا در دریافت قیمت\n📛 دلیل: {err}"
+            text = f"❌ خطا در دریافت قیمت\n📛 دلیل: {err}\n\n📢 {CHANNEL}"
 
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageText", json={
             "chat_id": chat_id,
@@ -89,7 +97,7 @@ def webhook():
         }
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
             "chat_id": chat_id,
-            "text": "سلام! 👋\nلطفاً یکی از گزینه‌ها رو انتخاب کن:",
+            "text": f"سلام! 👋\nلطفاً یکی از گزینه‌ها رو انتخاب کن:\n\n📢 {CHANNEL}",
             "reply_markup": keyboard
         })
 
