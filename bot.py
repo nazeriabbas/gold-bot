@@ -97,7 +97,7 @@ def webhook():
         }
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json={
             "chat_id": chat_id,
-            "text": f"سلام! 👋\nلطفاً یکی از گزینه‌ها رو انتخاب کن:\n\n📢 {CHANNEL}",
+            "text": f"سلام! 👋\nلطفاً یکی از گزینه‌ها رو انتخاب کن:\n\n {CHANNEL}",
             "reply_markup": keyboard
         })
 
