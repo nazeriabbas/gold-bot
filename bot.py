@@ -3,8 +3,9 @@ import datetime
 import os
 from flask import Flask, request, jsonify
 
-BOT_TOKEN = os.environ.get('8644301142:AAHL4HbChjTWBSEZfXbeC8evVqx7xnawDZ4')
-API_KEY = os.environ.get('efaf503401814e5c936be050d24290a5')
+import os
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
+API_KEY = os.environ.get('API_KEY')
 
 app = Flask(__name__)
 
