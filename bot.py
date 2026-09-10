@@ -76,7 +76,7 @@ def webhook():
                 f"{m['emoji']} {m['name']}\n"
                 f"💵 {formatted} USD\n"
                 f"🕐 {now}\n\n"
-                f"📢 {CHANNEL}"
+                f" {CHANNEL}"
             )
         else:
             text = f"❌ خطا در دریافت قیمت\n📛 دلیل: {err}\n\n📢 {CHANNEL}"
